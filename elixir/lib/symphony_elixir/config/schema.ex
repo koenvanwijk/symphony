@@ -273,8 +273,8 @@ defmodule SymphonyElixir.Config.Schema do
     embeds_one(:server, Server, on_replace: :update, defaults_to_struct: true)
   end
 
-  @spec parse(map()) :: {:ok, %__MODULE__{}} | {:error, {:invalid_workflow_config, String.t()}}
-  def parse(config) when is_map(config) do
+  @spec parse(map(), keyword()) :: {:ok, %__MODULE__{}} | {:error, {:invalid_workflow_config, String.t()}}
+  def parse(config, opts \\ []) when is_map(config) do
     config
     |> normalize_keys()
     |> drop_nil_values()
@@ -282,7 +282,7 @@ defmodule SymphonyElixir.Config.Schema do
     |> apply_action(:validate)
     |> case do
       {:ok, settings} ->
-        {:ok, finalize_settings(settings)}
+        {:ok, finalize_settings(settings, parse_opts(opts))}
 
       {:error, changeset} ->
         {:error, {:invalid_workflow_config, format_errors(changeset)}}
@@ -365,7 +365,13 @@ defmodule SymphonyElixir.Config.Schema do
     |> cast_embed(:server, with: &Server.changeset/2)
   end
 
-  defp finalize_settings(settings) do
+  defp parse_opts(opts) do
+    Keyword.put_new(opts, :workflow_dir, File.cwd!())
+  end
+
+  defp finalize_settings(settings, opts) do
+    workflow_dir = Keyword.get(opts, :workflow_dir)
+
     tracker = %{
       settings.tracker
       | api_key: resolve_secret_setting(settings.tracker.api_key, System.get_env("LINEAR_API_KEY")),
@@ -374,7 +380,12 @@ defmodule SymphonyElixir.Config.Schema do
 
     workspace = %{
       settings.workspace
-      | root: resolve_path_value(settings.workspace.root, Path.join(System.tmp_dir!(), "symphony_workspaces"))
+      | root:
+          resolve_path_value(
+            settings.workspace.root,
+            Path.join(System.tmp_dir!(), "symphony_workspaces"),
+            workflow_dir
+          )
     }
 
     codex = %{
@@ -422,16 +433,19 @@ defmodule SymphonyElixir.Config.Schema do
     end
   end
 
-  defp resolve_path_value(value, default) when is_binary(value) do
-    case normalize_path_token(value) do
-      :missing ->
-        default
+  defp resolve_path_value(value, default, workflow_dir) when is_binary(value) do
+    if String.trim(value) == "" do
+      default
+    else
+      case normalize_path_token(value) do
+        :missing ->
+          default
 
-      "" ->
-        default
-
-      path ->
-        path
+        path ->
+          path
+          |> expand_home_path()
+          |> resolve_relative_path(workflow_dir)
+      end
     end
   end
 
@@ -478,6 +492,17 @@ defmodule SymphonyElixir.Config.Schema do
   end
 
   defp normalize_secret_value(_value), do: nil
+
+  defp expand_home_path("~" <> rest), do: Path.expand("~" <> rest)
+  defp expand_home_path(path), do: path
+
+  defp resolve_relative_path(path, workflow_dir) when is_binary(path) do
+    if Path.type(path) == :relative and is_binary(workflow_dir) do
+      Path.expand(path, workflow_dir)
+    else
+      Path.expand(path)
+    end
+  end
 
   defp default_turn_sandbox_policy(workspace) do
     %{

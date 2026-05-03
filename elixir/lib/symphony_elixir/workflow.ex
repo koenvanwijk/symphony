@@ -30,7 +30,9 @@ defmodule SymphonyElixir.Workflow do
   @type loaded_workflow :: %{
           config: map(),
           prompt: String.t(),
-          prompt_template: String.t()
+          prompt_template: String.t(),
+          path: Path.t(),
+          workflow_dir: Path.t()
         }
 
   @spec current() :: {:ok, loaded_workflow()} | {:error, term()}
@@ -51,16 +53,18 @@ defmodule SymphonyElixir.Workflow do
 
   @spec load(Path.t()) :: {:ok, loaded_workflow()} | {:error, term()}
   def load(path) when is_binary(path) do
-    case File.read(path) do
+    workflow_path = Path.expand(path)
+
+    case File.read(workflow_path) do
       {:ok, content} ->
-        parse(content)
+        parse(content, workflow_path)
 
       {:error, reason} ->
-        {:error, {:missing_workflow_file, path, reason}}
+        {:error, {:missing_workflow_file, workflow_path, reason}}
     end
   end
 
-  defp parse(content) do
+  defp parse(content, workflow_path) do
     {front_matter_lines, prompt_lines} = split_front_matter(content)
 
     case front_matter_yaml_to_map(front_matter_lines) do
@@ -71,7 +75,9 @@ defmodule SymphonyElixir.Workflow do
          %{
            config: front_matter,
            prompt: prompt,
-           prompt_template: prompt
+           prompt_template: prompt,
+           path: workflow_path,
+           workflow_dir: Path.dirname(workflow_path)
          }}
 
       {:error, :workflow_front_matter_not_a_map} ->

@@ -29,8 +29,8 @@ defmodule SymphonyElixir.Config do
   @spec settings() :: {:ok, Schema.t()} | {:error, term()}
   def settings do
     case Workflow.current() do
-      {:ok, %{config: config}} when is_map(config) ->
-        Schema.parse(config)
+      {:ok, %{config: config, workflow_dir: workflow_dir}} when is_map(config) ->
+        Schema.parse(config, workflow_dir: workflow_dir)
 
       {:error, reason} ->
         {:error, reason}
