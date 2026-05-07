@@ -51,9 +51,11 @@ correctiemiddel. Teleop is beschikbaar via lokale interface én via internet.
 - **Padplanner**: kinematisch/collision-aware padplanningsalgoritme (eigen implementatie of
   leverancier-SDK; geen ROS vereist)
 - **Haalbaarheidsanalyser**: bereikbaarheids-, botsings- en lastanalyse
-- **Teleop-interface**: joystick, webinterface of LeRobot leader-arm voor handmatige correctie
+- **Teleop-interface**: joystick, webinterface of leader-robot-arm voor handmatige correctie
   (lokaal of via internet)
-- **Uitvoeringsruntime**: robotbesturing via leverancier-SDK of eigen stack (geen ROS)
+- **Uitvoeringsruntime**: robotbesturing via [LeRobot (Hugging Face)](https://github.com/huggingface/lerobot)
+  als voorkeur — ondersteunt teleop, imitatieleren en beleidsuitvoering op standaard hardware;
+  alternatieven: leverancier-SDK of eigen stack (geen ROS vereist)
 - **UI-front-end**: tablet of webapplicatie voor operator-interactie
 
 ---
@@ -169,7 +171,7 @@ De UI toont een checklist. Pas na aftekening van alle 7 punten is de "Start"-kno
 | 27:00 | ✅ Fase 5 compleet | – | Testrun geslaagd of gecorrigeerd |
 
 **Rol van teleop in deze fase:**
-- Teleop is beschikbaar als real-time correctiemiddel: joystick, webinterface, of LeRobot leader-arm
+- Teleop is beschikbaar als real-time correctiemiddel: joystick, webinterface, of leader-robot-arm
 - Teleop werkt lokaal (LAN) én via internet (remote)
 - Bij afwijking > configureerbare drempel: systeem pauzeert en vraagt om teleop-interventie
 - Teleop-correctie wordt gelogd en kan worden gebruikt voor padverbetering
@@ -202,7 +204,7 @@ De UI toont een checklist. Pas na aftekening van alle 7 punten is de "Start"-kno
 **Teleop-methoden (alle gelijkwaardig ondersteund):**
 - Joystick (lokaal, USB of Bluetooth)
 - Webinterface (lokaal LAN of via internet)
-- LeRobot leader-arm (leader-follower setup voor intuïtieve sturing; bijv. SO-100 of Koch v1.1)
+- Leader-robot-arm (leader-follower setup voor intuïtieve sturing)
 
 ---
 
